@@ -20,14 +20,15 @@ locals {
   eso_wi_member = "serviceAccount:${var.confident_gcp_project_id}.svc.id.goog[${var.confident_service_account_namespace}/${var.confident_eso_service_account_name}]"
 }
 
+locals {
+  postgres_password = coalesce(var.confident_psql_password, one(random_password.postgres[*].result))
+}
+
 resource "random_password" "postgres" {
+  count   = var.confident_psql_password == "" ? 1 : 0
   length  = 24
   special = false
 }
-
-# ---------------------------------------------------------------------------
-# Private Services Access — required for Cloud SQL private IP
-# ---------------------------------------------------------------------------
 
 resource "google_compute_global_address" "psa" {
   count         = var.confident_create_private_service_connection ? 1 : 0
@@ -46,21 +47,18 @@ resource "google_service_networking_connection" "psa" {
   reserved_peering_ranges = [google_compute_global_address.psa[0].name]
 }
 
-# ---------------------------------------------------------------------------
-# PostgreSQL (Cloud SQL)
-# ---------------------------------------------------------------------------
-
 resource "google_sql_database_instance" "this" {
   name                = local.db_identifier
   project             = var.confident_gcp_project_id
   region              = var.confident_gcp_region
   database_version    = var.confident_psql_version
-  deletion_protection = var.confident_rds_deletion_protection
+  deletion_protection = var.confident_cloudsql_deletion_protection
 
   settings {
+    edition           = var.confident_psql_edition
     tier              = var.confident_psql_instance_class
     availability_type = var.confident_psql_availability_type
-    disk_size         = var.confident_rds_allocated_storage
+    disk_size         = var.confident_cloudsql_allocated_storage
     disk_autoresize   = true
     user_labels       = var.confident_tags
 
@@ -74,7 +72,7 @@ resource "google_sql_database_instance" "this" {
       enabled                        = true
       point_in_time_recovery_enabled = true
       backup_retention_settings {
-        retained_backups = var.confident_rds_backup_retention_period
+        retained_backups = var.confident_cloudsql_backup_retention_period
       }
     }
   }
@@ -92,12 +90,8 @@ resource "google_sql_user" "this" {
   name     = var.confident_psql_username
   project  = var.confident_gcp_project_id
   instance = google_sql_database_instance.this.name
-  password = random_password.postgres.result
+  password = local.postgres_password
 }
-
-# ---------------------------------------------------------------------------
-# Object storage (GCS)
-# ---------------------------------------------------------------------------
 
 resource "google_storage_bucket" "this" {
   for_each                    = local.buckets
@@ -112,10 +106,6 @@ resource "google_storage_bucket" "this" {
     enabled = true
   }
 }
-
-# ---------------------------------------------------------------------------
-# App identity — GSA + Workload Identity binding + bucket access
-# ---------------------------------------------------------------------------
 
 resource "google_service_account" "app" {
   account_id   = local.app_sa_account
@@ -136,10 +126,6 @@ resource "google_storage_bucket_iam_member" "app" {
   member   = "serviceAccount:${google_service_account.app.email}"
 }
 
-# ---------------------------------------------------------------------------
-# Optional: empty Secret Manager secret + Workload Identity for External Secrets
-# ---------------------------------------------------------------------------
-
 resource "google_secret_manager_secret" "app" {
   count     = var.confident_create_secret_manager ? 1 : 0
   project   = var.confident_gcp_project_id
@@ -148,7 +134,6 @@ resource "google_secret_manager_secret" "app" {
   replication {
     auto {}
   }
-  # No google_secret_manager_secret_version: created empty, populated out-of-band.
 }
 
 resource "google_service_account" "eso" {
@@ -172,10 +157,6 @@ resource "google_secret_manager_secret_iam_member" "eso" {
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.eso[0].email}"
 }
-
-# ---------------------------------------------------------------------------
-# Optional managed Redis (Memorystore) — alternative to the bundled StatefulSet
-# ---------------------------------------------------------------------------
 
 resource "google_redis_instance" "this" {
   count              = var.confident_managed_redis_enabled ? 1 : 0

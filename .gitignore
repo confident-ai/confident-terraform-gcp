@@ -29,8 +29,18 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+# hcl 
+*.hcl
+
 # macOS
 .DS_Store
 
 # Misc
 DEPLOY.md
+
+# Terraform state backend config (kept out of the published module)
+backend.tf
+
+# Helm values
+values.yaml
+values.*.yaml

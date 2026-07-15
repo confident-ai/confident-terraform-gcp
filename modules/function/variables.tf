@@ -36,6 +36,22 @@ variable "confident_ar_repository_name" {
   }
 }
 
+variable "confident_code_executor_image_name" {
+  description = "Image name within the Artifact Registry repo (mirror of confidentai/confident-code-sandbox-gcp)."
+  type        = string
+  default     = "confident-code-sandbox-gcp"
+}
+
+variable "confident_code_executor_image_tag" {
+  type    = string
+  default = "latest"
+}
+
+variable "confident_app_service_account_email" {
+  description = "App service account (Workload Identity) granted roles/run.invoker on the sandbox."
+  type        = string
+}
+
 variable "confident_code_executor_memory" {
   type    = string
   default = "512Mi"

@@ -1,4 +1,3 @@
-# --- Cluster ---
 output "cluster_name" {
   value = module.gke.cluster_name
 }
@@ -8,7 +7,6 @@ output "configure_kubectl" {
   value       = "gcloud container clusters get-credentials ${module.gke.cluster_name} --region ${var.confident_gcp_region} --project ${var.confident_gcp_project_id}"
 }
 
-# --- Data plane (wire these into the Helm chart) ---
 output "database_url" {
   description = "PostgreSQL connection string (Helm secrets.data.DATABASE_URL)."
   value       = module.storage.database_url
@@ -37,9 +35,9 @@ output "eso_service_account_email" {
   value       = module.storage.eso_service_account_email
 }
 
-output "code_executor_function_name" {
-  description = "Helm codeExecutor.gcp.functionName (null when disabled)."
-  value       = local.create_function ? module.function[0].function_name : null
+output "code_executor_function_url" {
+  description = "Helm codeExecutor.gcp.functionUrl / CODE_EXECUTOR_GCP_FUNCTION_URL (null when disabled)."
+  value       = local.create_function ? module.function[0].service_url : null
 }
 
 output "secret_manager_secret_id" {

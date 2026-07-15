@@ -137,6 +137,12 @@ variable "confident_psql_instance_class" {
   default = "db-custom-2-7680"
 }
 
+variable "confident_psql_edition" {
+  description = "Cloud SQL edition. ENTERPRISE pairs with db-custom-* tiers; ENTERPRISE_PLUS needs db-perf-optimized-N-* tiers."
+  type        = string
+  default     = "ENTERPRISE"
+}
+
 variable "confident_psql_db_name" {
   type    = string
   default = "confident_db"
@@ -147,17 +153,24 @@ variable "confident_psql_username" {
   default = "confident"
 }
 
-variable "confident_rds_allocated_storage" {
+variable "confident_psql_password" {
+  description = "PostgreSQL password. Leave empty to auto-generate a random one."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "confident_cloudsql_allocated_storage" {
   type    = number
   default = 20
 }
 
-variable "confident_rds_backup_retention_period" {
+variable "confident_cloudsql_backup_retention_period" {
   type    = number
   default = 7
 }
 
-variable "confident_rds_deletion_protection" {
+variable "confident_cloudsql_deletion_protection" {
   type    = bool
   default = false
 }
@@ -194,7 +207,7 @@ variable "confident_service_account_name" {
   default = "confident"
 }
 
-# --- Code executor (Cloud Function) — created by default ---
+# --- Code executor (Cloud Run) : created by default ---
 variable "confident_code_executor_enabled" {
   type    = bool
   default = true
@@ -204,6 +217,17 @@ variable "confident_ar_repository_name" {
   description = "Artifact Registry repo with the code-sandbox image. Required when confident_code_executor_enabled=true."
   type        = string
   default     = ""
+}
+
+variable "confident_code_executor_image_name" {
+  description = "Image name within the Artifact Registry repo (mirror of confidentai/confident-code-sandbox-gcp)."
+  type        = string
+  default     = "confident-code-sandbox-gcp"
+}
+
+variable "confident_code_executor_image_tag" {
+  type    = string
+  default = "latest"
 }
 
 variable "confident_code_executor_memory" {

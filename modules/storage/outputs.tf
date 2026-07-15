@@ -1,6 +1,6 @@
 output "database_url" {
   description = "PostgreSQL connection string (Helm secrets.data.DATABASE_URL)."
-  value       = "postgresql://${google_sql_user.this.name}:${urlencode(random_password.postgres.result)}@${google_sql_database_instance.this.private_ip_address}:5432/${google_sql_database.this.name}"
+  value       = "postgresql://${google_sql_user.this.name}:${urlencode(local.postgres_password)}@${google_sql_database_instance.this.private_ip_address}:5432/${google_sql_database.this.name}"
   sensitive   = true
 }
 

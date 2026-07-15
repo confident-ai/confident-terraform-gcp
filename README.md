@@ -14,7 +14,7 @@ Into a VPC network and subnet you already have, this module provisions:
 - **Cloud SQL for PostgreSQL**: private IP, the app's primary database.
 - **Cloud Storage**: two GCS buckets (test cases + payloads).
 - **App identity**: a Google service account bound to the app's Kubernetes ServiceAccount through **Workload Identity** (keyless).
-- **Code executor** _(optional, on by default)_: a Cloud Functions (gen2) sandbox for code-based metrics.
+- **Code executor** _(optional, on by default)_: a Cloud Run sandbox for code-based metrics.
 - **Secret Manager** _(optional)_: a secret + a Workload-Identity-bound service account for the External Secrets Operator.
 - **Memorystore for Redis** _(optional)_: managed Redis instead of the in-cluster one.
 
@@ -73,7 +73,7 @@ This module is infrastructure only. Install the app with the `confident-ai` Helm
 | `database_url` (sensitive)              | `secrets.data.DATABASE_URL`                                    |
 | `test_cases_bucket` / `payloads_bucket` | `storage.testCasesBucket` / `storage.payloadsBucket`           |
 | `app_service_account_email`             | `serviceAccount.annotations["iam.gke.io/gcp-service-account"]` |
-| `code_executor_function_name`           | `codeExecutor.gcp.functionName`                                |
+| `code_executor_function_url`            | `codeExecutor.gcp.functionUrl`                                 |
 | `secret_manager_secret_id`              | `secrets.externalSecrets.remoteKey`                            |
 | `redis_url`                             | `redis.externalUrl`                                            |
 
@@ -92,15 +92,15 @@ This module is infrastructure only. Install the app with the `confident-ai` Helm
 
 **Commonly set** (all optional, with sensible prod defaults)
 
-| Name                                                                | Default               | Description                                                                  |
-| ------------------------------------------------------------------- | --------------------- | ---------------------------------------------------------------------------- |
-| `confident_gcp_region`                                              | `us-central1`         | Region for the regional cluster + data plane.                                |
-| `confident_environment` / `confident_environment_code`              | `stage` / `s`         | Environment name used in resource naming (use `prod` / `p`).                 |
-| `confident_public_gke`                                              | `false`               | Expose the GKE public endpoint (needed for kubectl/helm from your laptop).   |
-| `confident_node_machine_type` / `confident_node_group_desired_size` | `n2-standard-8` / `4` | Node pool sizing.                                                            |
-| `confident_code_executor_enabled` / `confident_ar_repository_name`  | `true` / `""`         | Code-executor Cloud Function (Artifact Registry repo required when enabled). |
-| `confident_create_secret_manager`                                   | `false`               | Secret + ESO Workload Identity.                                              |
-| `confident_managed_redis_enabled`                                   | `false`               | Provision Memorystore instead of in-cluster Redis.                           |
+| Name                                                                | Default               | Description                                                                                              |
+| ------------------------------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------- |
+| `confident_gcp_region`                                              | `us-central1`         | Region for the regional cluster + data plane.                                                            |
+| `confident_environment` / `confident_environment_code`              | `stage` / `s`         | Environment name used in resource naming (use `prod` / `p`).                                             |
+| `confident_public_gke`                                              | `false`               | Expose the GKE public endpoint (needed for kubectl/helm from your laptop).                               |
+| `confident_node_machine_type` / `confident_node_group_desired_size` | `n2-standard-8` / `4` | Node pool sizing.                                                                                        |
+| `confident_code_executor_enabled` / `confident_ar_repository_name`  | `true` / `""`         | Code-executor Cloud Run service (Artifact Registry repo with the mirrored image, required when enabled). |
+| `confident_create_secret_manager`                                   | `false`               | Secret + ESO Workload Identity.                                                                          |
+| `confident_managed_redis_enabled`                                   | `false`               | Provision Memorystore instead of in-cluster Redis.                                                       |
 
 See [`variables.tf`](./variables.tf) for the complete list (naming, Cloud SQL sizing, backups, tags, …).
 
@@ -114,7 +114,7 @@ See [`variables.tf`](./variables.tf) for the complete list (naming, Cloud SQL si
 | `test_cases_bucket` / `payloads_bucket` / `clickhouse_backup_bucket` | GCS bucket names.                                                    |
 | `app_service_account_email`                                          | GSA email for the Workload Identity annotation.                      |
 | `eso_service_account_email`                                          | GSA for the ESO ServiceAccount (null unless Secret Manager enabled). |
-| `code_executor_function_name`                                        | Cloud Function name (null when disabled).                            |
+| `code_executor_function_url`                                         | Sandbox Cloud Run service URL (null when disabled).                  |
 | `secret_manager_secret_id`                                           | Secret id for ESO (null unless enabled).                             |
 | `redis_url`                                                          | Managed Redis URL (null unless enabled).                             |
 | `helm_values`                                                        | Ready-to-paste Helm values snippet.                                  |
@@ -123,5 +123,5 @@ See [`variables.tf`](./variables.tf) for the complete list (naming, Cloud SQL si
 
 - **Workload Identity, not OIDC keys**: the app GSA binds to `<project>.svc.id.goog[<namespace>/<name>]`.
 - **Cloud SQL private IP** needs Private Services Access on the network; the module creates it (`confident_create_private_service_connection`, default `true`), set `false` if the network already has a PSA range.
-- **Code executor** (Cloud Functions gen2) pulls its image from the Artifact Registry repo named by `confident_ar_repository_name`; set `confident_code_executor_enabled = false` to skip it.
+- **Code executor** is a **Cloud Run** service running the `confident-code-sandbox-gcp` image mirrored into the Artifact Registry repo named by `confident_ar_repository_name`. It requires authentication and grants the app service account `roles/run.invoker`. Set `confident_code_executor_enabled = false` to skip it.
 - The database password is generated and exposed only through the sensitive `database_url` output.

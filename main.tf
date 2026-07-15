@@ -43,8 +43,13 @@ module "function" {
   confident_gcp_project_id                = var.confident_gcp_project_id
   confident_gcp_region                    = var.confident_gcp_region
   confident_ar_repository_name            = var.confident_ar_repository_name
+  confident_code_executor_image_name      = var.confident_code_executor_image_name
+  confident_code_executor_image_tag       = var.confident_code_executor_image_tag
   confident_code_executor_memory          = var.confident_code_executor_memory
   confident_code_executor_timeout_seconds = var.confident_code_executor_timeout_seconds
+
+  # app SA (created in the storage layer) gets roles/run.invoker on the sandbox
+  confident_app_service_account_email = module.storage.app_service_account_email
 }
 
 module "storage" {
@@ -64,13 +69,15 @@ module "storage" {
   confident_network_id                        = var.confident_network_id
   confident_create_private_service_connection = var.confident_create_private_service_connection
 
-  confident_psql_version                = var.confident_psql_version
-  confident_psql_instance_class         = var.confident_psql_instance_class
-  confident_psql_db_name                = var.confident_psql_db_name
-  confident_psql_username               = var.confident_psql_username
-  confident_rds_allocated_storage       = var.confident_rds_allocated_storage
-  confident_rds_backup_retention_period = var.confident_rds_backup_retention_period
-  confident_rds_deletion_protection     = var.confident_rds_deletion_protection
+  confident_psql_version                     = var.confident_psql_version
+  confident_psql_instance_class              = var.confident_psql_instance_class
+  confident_psql_edition                     = var.confident_psql_edition
+  confident_psql_db_name                     = var.confident_psql_db_name
+  confident_psql_username                    = var.confident_psql_username
+  confident_psql_password                    = var.confident_psql_password
+  confident_cloudsql_allocated_storage       = var.confident_cloudsql_allocated_storage
+  confident_cloudsql_backup_retention_period = var.confident_cloudsql_backup_retention_period
+  confident_cloudsql_deletion_protection     = var.confident_cloudsql_deletion_protection
 
   confident_test_cases_bucket                = var.confident_test_cases_bucket
   confident_payloads_bucket                  = var.confident_payloads_bucket
