@@ -6,7 +6,7 @@ Terraform module that stands up the cloud infrastructure for a self-hosted [Conf
 
 ## Architecture
 
-![Confident AI on GCP](./public/architecture.png)
+![Confident AI on GCP](https://raw.githubusercontent.com/confident-ai/terraform-google-confident-ai/main/public/architecture.png)
 
 Into a VPC network and subnet you already have, this module provisions:
 
