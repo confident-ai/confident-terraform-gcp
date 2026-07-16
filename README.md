@@ -122,6 +122,7 @@ See [`variables.tf`](./variables.tf) for the complete list (naming, Cloud SQL si
 ## Notes
 
 - **Workload Identity, not OIDC keys**: the app GSA binds to `<project>.svc.id.goog[<namespace>/<name>]`.
+- **Signed GCS URLs**: the app GSA also gets `roles/iam.serviceAccountTokenCreator` on itself so it can sign object URLs via the IAM Credentials API (there is no local key under Workload Identity). Enable `iamcredentials.googleapis.com`, or signing 500s with `iam.serviceAccounts.signBlob denied`.
 - **Cloud SQL private IP** needs Private Services Access on the network; the module creates it (`confident_create_private_service_connection`, default `true`), set `false` if the network already has a PSA range.
 - **Code executor** is a **Cloud Run** service running the `confident-code-sandbox-gcp` image mirrored into the Artifact Registry repo named by `confident_ar_repository_name`. It requires authentication and grants the app service account `roles/run.invoker`. Set `confident_code_executor_enabled = false` to skip it.
 - The database password is generated and exposed only through the sensitive `database_url` output.

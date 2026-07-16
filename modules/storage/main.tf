@@ -119,6 +119,12 @@ resource "google_service_account_iam_member" "app_workload_identity" {
   member             = local.wi_member
 }
 
+resource "google_service_account_iam_member" "app_token_creator" {
+  service_account_id = google_service_account.app.name
+  role               = "roles/iam.serviceAccountTokenCreator"
+  member             = "serviceAccount:${google_service_account.app.email}"
+}
+
 resource "google_storage_bucket_iam_member" "app" {
   for_each = google_storage_bucket.this
   bucket   = each.value.name
